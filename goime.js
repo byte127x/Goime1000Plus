@@ -1471,6 +1471,7 @@ function draw() {
 		}
 	}
 	_frameCount++;
+	app.render();
 }
 
 window.addEventListener('load', ()=>{ preload(); });
