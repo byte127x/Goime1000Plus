@@ -170,7 +170,7 @@ function addMapVisuals() {
 		parent: app.stage,
 		label: 'stat1',
 		zIndex: 9999,
-		x: 550, y: 0,
+		x: 650, y: 0,
 		anchor: {x: 1, y: 0},
 		text: '',
 		style: {
@@ -182,7 +182,7 @@ function addMapVisuals() {
 		parent: app.stage,
 		label: 'stat2',
 		zIndex: 9998,
-		x: 550, y: 16,
+		x: 650, y: 16,
 		anchor: {x: 0, y: 0},
 		text: '/1000',
 		style: {
