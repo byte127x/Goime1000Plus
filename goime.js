@@ -152,9 +152,30 @@ function loadMap() {
 	}
 }
 
+let frameRateThrottling = false;
+let fps, interval;
+let now;
+let then = window.performance.now();
+let lastFrameReq = then;
+let delta;
+function setFPS(newFPS) {fps = newFPS; interval = 1000 / fps;};
+setFPS(60);
+
 function setup() {
 	addMapVisuals();
-	app.ticker.add((time) => {draw()});
+	app.ticker.add((time) => {
+		if (frameRateThrottling) {
+			now = window.performance.now();
+			delta = now - then;
+			if (delta > interval) {
+				then = now - (delta % interval);
+				draw();
+			}
+
+			if (lastFrameReq - then > interval) then = now;
+			lastFrameReq = now;
+		} else draw();
+	});
 }
 
 let _root = {};
