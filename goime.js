@@ -589,20 +589,20 @@ function drawbubble(num, bubble, yoffset, pointer) {
 	const colorType = checkerboard(x, y);
 	const backing = bubble.getChildByLabel('backing')
 	backing.clear();
-	backing.moveTo((- bubblePointLength) * pointer, (- bubblePointWidth) / 2 + yoffset);
+	backing.moveTo(-bubblePointLength * pointer, -bubblePointWidth / 2 + yoffset);
 	if (pointer == 1) {
 		backing.lineTo(0, 0);
 	}
 	backing
-		.lineTo((- bubblePointLength) * pointer, bubblePointWidth / 2 + yoffset)
-		.lineTo((- bubblePointLength) * pointer, bubbleBoxWidth / 2 - bubbleRadius + yoffset)
-		.quadraticCurveTo((- bubblePointLength) * pointer, bubbleBoxWidth / 2 + yoffset, (- bubblePointLength) * pointer - bubbleRadius, bubbleBoxWidth / 2 + yoffset)
-		.lineTo((- bubblePointLength) * pointer - bubbleBoxLength + bubbleRadius, bubbleBoxWidth / 2 + yoffset)
-		.quadraticCurveTo((- bubblePointLength) * pointer - bubbleBoxLength, bubbleBoxWidth / 2 + yoffset, (- bubblePointLength) * pointer - bubbleBoxLength, bubbleBoxWidth / 2 - bubbleRadius + yoffset)
-		.lineTo((- bubblePointLength) * pointer - bubbleBoxLength, (- bubbleBoxWidth) / 2 + bubbleRadius + yoffset)
-		.quadraticCurveTo((- bubblePointLength) * pointer - bubbleBoxLength, (- bubbleBoxWidth) / 2 + yoffset, (- bubblePointLength) * pointer - bubbleBoxLength + bubbleRadius, (- bubbleBoxWidth) / 2 + yoffset)
-		.lineTo((- bubblePointLength) * pointer - bubbleRadius, (- bubbleBoxWidth) / 2 + yoffset)
-		.quadraticCurveTo((- bubblePointLength) * pointer, (- bubbleBoxWidth) / 2 + yoffset, (- bubblePointLength) * pointer, (- bubbleBoxWidth) / 2 + bubbleRadius + yoffset)
+		.lineTo(-bubblePointLength * pointer, bubblePointWidth / 2 + yoffset)
+		.lineTo(-bubblePointLength * pointer, bubbleBoxWidth / 2 - bubbleRadius + yoffset)
+		.quadraticCurveTo(-bubblePointLength * pointer, bubbleBoxWidth / 2 + yoffset, -bubblePointLength * pointer - bubbleRadius, bubbleBoxWidth / 2 + yoffset)
+		.lineTo(-bubblePointLength * pointer - bubbleBoxLength + bubbleRadius, bubbleBoxWidth / 2 + yoffset)
+		.quadraticCurveTo(-bubblePointLength * pointer - bubbleBoxLength, bubbleBoxWidth / 2 + yoffset, -bubblePointLength * pointer - bubbleBoxLength, bubbleBoxWidth / 2 - bubbleRadius + yoffset)
+		.lineTo(-bubblePointLength * pointer - bubbleBoxLength, -bubbleBoxWidth / 2 + bubbleRadius + yoffset)
+		.quadraticCurveTo(-bubblePointLength * pointer - bubbleBoxLength, -bubbleBoxWidth / 2 + yoffset, -bubblePointLength * pointer - bubbleBoxLength + bubbleRadius, -bubbleBoxWidth / 2 + yoffset)
+		.lineTo(-bubblePointLength * pointer - bubbleRadius, -bubbleBoxWidth / 2 + yoffset)
+		.quadraticCurveTo(-bubblePointLength * pointer, -bubbleBoxWidth / 2 + yoffset, -bubblePointLength * pointer, -bubbleBoxWidth / 2 + bubbleRadius + yoffset)
 		.fill(getColor(achievements[num], colorType, 1));
 	bubble.getChildByLabel('achNumText').text = num + 1 + '  ' + achievementNames[num];
 	bubble.getChildByLabel('achNumText').y = -bubbleBoxWidth / 2 + yoffset;
@@ -1098,30 +1098,14 @@ function getRGB(a) {
 	return r * 0x10000 + g * 0x100 + b;
 }
 function getSimpleColor(i) {
-	if (i == -1) {
-		return -1;
-	}
-	if (i < 0.041666666666666664 || i >= 0.9583333333333334) {
-		return 0;
-	}
-	if (i < 0.125) {
-		return 1;
-	}
-	if (i < 0.192) {
-		return 2;
-	}
-	if (i < 0.421) {
-		return 3;
-	}
-	if (i < 0.5833333333333334) {
-		return 4;
-	}
-	if (i < 0.696) {
-		return 5;
-	}
-	if (i < 0.7916666666666666) {
-		return 6;
-	}
+	if (i == -1) return -1;
+	if (i < 0.041666666666666664 || i >= 0.9583333333333334) return 0;
+	if (i < 0.125) return 1;
+	if (i < 0.192) return 2;
+	if (i < 0.421) return 3;
+	if (i < 0.5833333333333334) return 4;
+	if (i < 0.696) return 5;
+	if (i < 0.7916666666666666) return 6;
 	return 7;
 }
 function checkFlag(x, y) {
@@ -1257,33 +1241,15 @@ function draw() {
 	}
 	if (p.vy > p.cy % 25 && (solidAt(p.cx, p.cy) && !solidAt(p.cx, p.cy - 25) || p.cx % 25 >= 16 && (solidAt(p.cx + 25, p.cy) && !solidAt(p.cx + 25, p.cy - 25)) || p.cx % 25 <= 9 && (solidAt(p.cx - 25, p.cy) && !solidAt(p.cx - 25, p.cy - 25)))) {
 		achget(5);
-		if (p.vy > 17) {
-			achget(7);
-		}
-		if (blockUnderType(p.cx, p.cy, 1) > 0) {
-			achget(15);
-		}
-		if (blockUnderType(p.cx, p.cy, 2) > 0) {
-			achget(16);
-		}
-		if (blockUnderType(p.cx, p.cy, 3) > 0) {
-			achget(17);
-		}
-		if (blockUnderType(p.cx, p.cy, 5) > 0) {
-			achget(18);
-		}
-		if (blockUnderType(p.cx, p.cy, 6) > 0) {
-			achget(22);
-		}
-		if (blockUnderType(p.cx, p.cy, 10) > 0) {
-			achget(33);
-		}
-		if (blockUnderType(p.cx, p.cy, 9) > 0) {
-			achget(45);
-		}
-		if (freefallTimer > 80) {
-			achget(59);
-		}
+		if (p.vy > 17) achget(7);
+		if (blockUnderType(p.cx, p.cy, 1) > 0) achget(15);
+		if (blockUnderType(p.cx, p.cy, 2) > 0) achget(16);
+		if (blockUnderType(p.cx, p.cy, 3) > 0) achget(17);
+		if (blockUnderType(p.cx, p.cy, 5) > 0) achget(18);
+		if (blockUnderType(p.cx, p.cy, 6) > 0) achget(22);
+		if (blockUnderType(p.cx, p.cy, 10) > 0) achget(33);
+		if (blockUnderType(p.cx, p.cy, 9) > 0) achget(45);
+		if (freefallTimer > 80) achget(59);
 		p.onob = true;
 		p.cy = Math.floor(p.cy / 25) * 25;
 		p.vy = 0;
@@ -1317,9 +1283,7 @@ function draw() {
 	if (p.vy < 0 && (solidAt(p.cx, p.cy - 20) || p.cx % 25 >= 16 && solidAt(p.cx + 25, p.cy - 20) || p.cx % 25 <= 9 && solidAt(p.cx - 25, p.cy - 20))) {
 		p.cy = Math.floor((p.cy + 30) / 25) * 25 - 5;
 		achget(1);
-		if (p.vy < -9) {
-			achget(65);
-		}
+		if (p.vy < -9) achget(65);
 		p.vy = 0;
 	}
 	if (p.vx > 0 && (solidAt(p.cx + 10, p.cy) && p.cy % 25 > 0 || solidAt(p.cx + 10, p.cy - 25) && p.cy % 25 < 20)) {
@@ -1350,6 +1314,8 @@ function draw() {
 		achget(31);
 		timerl = 0;
 	}
+
+	// Tile checks
 	if (painfulAt(p.cx - 8, p.cy - 2) || painfulAt(p.cx + 8, p.cy - 2) || painfulAt(p.cx - 8, p.cy - 18) || painfulAt(p.cx + 8, p.cy - 18)) {
 		die();
 		achget(12);
@@ -1360,8 +1326,6 @@ function draw() {
 		getCoinAt(p.cx + 10, p.cy - 20);
 		getCoinAt(p.cx - 10, p.cy - 20);
 	}
-
-	// Tile checks
 	getPortalAt(p.cx, p.cy - 10);
 	vanish(p.cx, p.cy);
 	paint(p.cx, p.cy - 10);
@@ -1461,4 +1425,4 @@ function draw() {
 	_frameCount++;
 }
 
-window.addEventListener('load', ()=>{ preload(); });
+window.addEventListener('load', () => { preload(); });
