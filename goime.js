@@ -1,37 +1,31 @@
 const cwidth = 850;
 const cheight = 700;
-
 let _xmouse = 0;
 let _ymouse = 0;
 const _keysDown = new Array(222).fill(false);
 let _frameCount = 0;
 function getTimer() { return _frameCount * 1000/60; }
 
+// Map-related variables
 const mapHeight = 400;
 const mapWidth = 250;
 let mapS;
 const map = new Array(mapHeight);
-for (let i = 0; i < mapHeight; i++) {
-	map[i] = new Array(mapWidth);
-}
+for (let i = 0; i < mapHeight; i++) map[i] = new Array(mapWidth);
 const tileFrames = new Array(mapHeight);
-for (let i = 0; i < mapHeight; i++) {
-	tileFrames[i] = new Array(mapWidth);
-}
+for (let i = 0; i < mapHeight; i++) tileFrames[i] = new Array(mapWidth);
 const colorMap = new Array(9);
-for (let i = 0; i < colorMap.length; i++) {
-	colorMap[i] = new Array(11).fill(-1);
-}
+for (let i = 0; i < colorMap.length; i++) colorMap[i] = new Array(11).fill(-1);
 const portals = [
-	[52,388,45,168],
-	[168,366,233,389],
-	[48,397,203,79],
-	[237,388,101,124],
-	[239,367,157,209],
-	[1,397,121,322],
-	[118,322,169,356],
-	[130,317,230,20],
-	[147,167,209,254]
+	[ 52,388,   45,168],
+	[168,366,  233,389],
+	[ 48,397,  203, 79],
+	[237,388,  101,124],
+	[239,367,  157,209],
+	[  1,397,  121,322],
+	[118,322,  169,356],
+	[130,317,  230, 20],
+	[147,167,  209,254]
 ];
 const portalColors = [
 	0x990000,
@@ -44,10 +38,161 @@ const portalColors = [
 	0xFFFFFF,
 	0x000000,
 ];
-const flags = [[28,385,141,369],[93,396,52,396],[8,377,231,370],[128,174,151,168],[122,176,218,177]];
-const flagNames = ['Bounceway','Ghostspike','Lie Low','Islands','Bottomless'];
-const flagColors = [0x006600, 0x00CC00, 0x0088FF];
-const finishFlagColors = [0x666666, 0xFFFFFF, 0xFF0000, 0xFF4000, 0xFF8000, 0xFFBF00, 0xFFFF00, 0xBFFF00, 0x80FF00, 0x40FF00, 0x00FF00, 0x00FF40, 0x00FF80, 0x00FFBF, 0x00FFFF, 0x00BFFF, 0x0080FF, 0x0040FF, 0x0000FF, 0x4000FF, 0x8000FF, 0xBF00FF, 0xFF00FF, 0xFF00BF, 0xFF0080, 0xFF0040, 0xFF0000, 0xFC000C, 0xE70D1B, 0xDB1324, 0xCE1A31, 0xC2203D, 0xB62749, 0xAA2D55, 0x9E3461, 0x923A6D, 0x864179, 0x794786, 0x6D4E92, 0x61549E, 0x555BAA, 0x4961B6, 0x3D68C2, 0x316ECE, 0x2475DB, 0x187BE7, 0x0C82F3, 0x0088FF];
+const flags = [
+	[28,385,141,369],
+	[93,396,52,396],
+	[8,377,231,370],
+	[128,174,151,168],
+	[122,176,218,177]
+];
+const flagNames = [
+	'Bounceway',
+	'Ghostspike',
+	'Lie Low',
+	'Islands',
+	'Bottomless'
+];
+
+function loadMap() {
+	for (let y = 0; y < mapHeight; y++) {
+		for (let x = 0; x < mapWidth; x++) {
+			map[y][x] = mapS.charCodeAt(y * (mapWidth + 2) + x) - 46;
+		}
+	}
+	for (let i = 0; i < portals.length; i++) {
+		map[portals[i][1]][portals[i][0]] = 100 + i * 4;
+		map[portals[i][3]][portals[i][2]] = 102 + i * 4;
+		map[portals[i][1] + 1][portals[i][0]] = 101 + i * 4;
+		map[portals[i][3] + 1][portals[i][2]] = 103 + i * 4;
+		map[portals[i][1]][portals[i][0] + 1] = 101 + i * 4;
+		map[portals[i][3]][portals[i][2] + 1] = 103 + i * 4;
+		map[portals[i][1] + 1][portals[i][0] + 1] = 101 + i * 4;
+		map[portals[i][3] + 1][portals[i][2] + 1] = 103 + i * 4;
+	}
+	for (let i = 0; i < flags.length; i++) {
+		map[flags[i][1]][flags[i][0]] = 200 + i;
+		map[flags[i][3]][flags[i][2]] = 250 + i;
+	}
+}
+
+class GoimePlayer{
+	constructor(vx, vy, cx, cy, cr, ax, ay, onob, jumpPower) {
+		this.vx = vx; // velocity x
+		this.vy = vy; // velocity y
+		this.cx = cx; // current x
+		this.cy = cy; // current y
+		this.cr = cr; // face x
+		this.ax = ax; // on-screen x
+		this.ay = ay; // on-screen y
+		this.onob = onob; // on object
+		this.jumpPower = jumpPower;
+	}
+
+	jump() {
+		this.vy = -this.jumpPower;
+		this.onob = false;
+	}
+}
+
+let sx = 3750; // start x
+let sy = 8124; // start y
+const p = new GoimePlayer(0, 0, sx, sy, 0, 0, 0, false, 8); // player
+let num2 = 0;
+let cameraX = sx - 350;
+let cameraXV = 0;
+let cameraY = sy - 440;
+let oldCameraX = 0;
+let oldCameraY = 0;
+let oldXmouse = 0;
+let oldYmouse = 0;
+const gravity = 0.5;
+const friction = 0.85;
+const power = 0.6;
+const panpower = 50;
+let ghost = 0;
+let ghostKey = false;
+let timer = 0;
+let timerl = 0; // How long the left arrow key has been held
+let timerr = 0; // How long the right arrow key has been held
+let noAchTimer = 0;
+let noAchTimerStart = getTimer();
+let noDeathTimer = 0;
+let noDeathTimerStart = getTimer();
+let flashTimer = 100;
+let portalTimer = 0;
+let noCoinTimer = 0;
+let noCoinTimerStart = getTimer();
+let freefallTimer = 0;
+let money = 0; // Current coin balance
+let money2 = 0; // Total coins collected
+let deathCount = 0;
+const colorPower = 0.004;
+let colorc = 0.16666666666666666;
+let pColor = 0.16666666666666666;
+let colorMin = 0.16666666666666666; // minimum color yet painted
+let colorMax = 0.16666666666666666; // maximum color yet painted
+let pColorCountInMainCanvas = 0;
+let colorCountInMainCanvas = 0;
+let changedColor = true;
+let curCourse = -1;
+const completedCourses = new Array(flags.length).fill(false);
+const colors = [
+	[[0x101010, 0x404040, 0x909090, 0xD0D0D0], [0x000000, 0x202029, 0x707070, 0xC0C0C0]],
+	[[0x0055BB, 0x0088FF, 0x00FFFF, 0xFFFFFF], [0x003388, 0x0055BB, 0x00FFFF, 0xFFFFFF]]];
+const numbers = [[[1,1,1],[1,0,1],[1,0,1],[1,0,1],[1,1,1]],[[0,1,0],[0,1,0],[0,1,0],[0,1,0],[0,1,0]],[[1,1,0],[0,0,1],[0,1,0],[1,0,0],[1,1,1]],[[1,1,0],[0,0,1],[1,1,0],[0,0,1],[1,1,0]],[[1,0,1],[1,0,1],[1,1,1],[0,0,1],[0,0,1]],[[1,1,1],[1,0,0],[1,1,0],[0,0,1],[1,1,0]],[[0,1,0],[1,0,0],[1,1,0],[1,0,1],[0,1,0]],[[1,1,1],[0,0,1],[0,0,1],[0,1,0],[0,1,0]],[[1,1,1],[1,0,1],[1,1,1],[1,0,1],[1,1,1]],[[0,1,0],[1,0,1],[0,1,1],[0,0,1],[0,1,0]]];
+const achievements = new Array(1000).fill(false);
+const achShowing = new Array(0);
+let achCount = 0;
+const startTimer = getTimer();
+
+// [0] solid
+// [1] hurts
+// [2] is trampoline
+// [3] (unused)
+// [4] impermeable to ghosts
+// [5] frame count
+const tileProperties = [
+	// 00
+	[false,false,false,true, false,0 ], // . Air
+	[true, false,false,true, false,1 ], // / Red tile
+	[true, false,false,true, false,1 ], // 0 Green tile
+	[true, false,false,true, false,1 ], // 1 Gray spikes
+	[false,true, false,true, false,1 ], // 2 Yellow tile
+	[true, false,false,true, false,1 ], // 3 Gray tile
+	[true, false,false,true, false,1 ], // 4 Wood tile
+	[true, false,true, true, false,11], // 5 Trampoline
+	[false,true, false,true, false,1 ], // 6 Fire
+	[true, false,false,true, false,1 ], // 7 White tile
+	// 10
+	[true, false,false,true, false,1 ], // 8 Light blue tile
+	[true, false,false,true, true, 1 ], // 9 Black tile
+	[false,true, false,true, true, 1 ], // : Dark spikes
+	[false,false,false,true, false,1 ], // ; Coin
+	[true, false,false,true, false,2 ], // < Spawn point (left)
+	[true, false,false,true, false,2 ], // = Spawn point (right)
+	[true, false,false,true, false,1 ], // > Color wheel
+	[true, false,false,true, false,0 ], // ? Tangible invisible tile
+	[true, false,false,true, false,1 ], // @ Temporary tile
+	[false,false,false,true, false,1 ], // A Paintable tile
+	// 20
+	[false,false,false,true, false,1 ], // B Unused and unpaintable paintable tile duplicate
+	[false,false,false,false,false,1 ], // C Guy
+	// 100-199 are portals
+	// 200-299 are flags
+];
+const achievementNames = ["Best thing ever","Bonk","Bouncy ball","To the left!","Going the right way","Painful landing","Full sprint","Very painful landing","Play for a second","A minute minute","Uneventful","The inevitable","Ouch!","Die from starvation","Boing!","Red Zone","Don't get splinters","Green zone","Yellow zone","Migration","More details","Bright blue bubble","Gray zone","Survive","Survive and thrive","Supernatural","Revival","Ghostly death","Paranormal step","Empty list","Ghosts cheat death","Left smush","Right smush","Blue zone","Join the work force","I hate nickels","Penny pincher","Teleporter","Splash of color","Across the rainbow","Bull in a china shop","Unemployed","A colorful way to die","No one can die twice...","Clumsy","White zone","Very clumsy","Too clumsy","Way too clumsy","Coin collector","Coin snatcher","Leave a mark","A big canvas","A second coat","Uniform painter","Paint everywhere","Multicolor","Ghost make bad painters","Exotic ghost","Extremely painful landing","Bounceway","Ghostspike","Lie Low","Islands","Bottomless","Superbonk","Finish line","Giving it a try","Daredevil meets doom","Ghosts in the portal","Seeing red","Juicy Orange","N","Green with Envy","Waterdrop","Pale blue dot","You are a grape","Fuchsiania"];
+const achievementDescriptions = ["Start playing this game.","Hit your head on a ceiling.","Jump.","Move left.","Move right.","Land.","Reach maximum running speed.","Land from a high distance.","Until you get to the second second!","Play for a minute.","Don't get an achievement for ten seconds.","Die.","Touch a deadly block.","Die from falling into the abyss.","Bounce on a trampoline.","Walk on red land.","Walk on wood.","Walk on green land.","Walk on yellow land.","Set a different spawn point.","Roll over an achievement.","Roll over an achieved achievement.","Walk on gray land.","Don't die for ten seconds.","Don't die for thirty seconds.","Become a ghost.","Turn from ghost to normal.","Die as a ghost.","Land as a ghost (on black land).","Get the list of recent achievements blank.","Be in front of a spikeball as a ghost.","Press against a wall to the left.","Press against a wall to the right.","Walk on blue land.","Collect a coin.","Collect five coins.","Collect all 100 coins.","Use a portal.","Paint yourself a different color.","Paint yourself all possible colors.","Destroy a temporary block.","Go thirty seconds without collecting a coin.","Die as a color other than yellow.","Die twice.","Die five times.","Walk on white land.","Die 25 times.","Die 50 times.","Die 100 times.","Collect 10 coins","Collect 20 coins.","Paint a canvas.","Paint the main canvas.","Paint a canvas twice with different colors.","Paint the main canvas entirely one color.","Paint the entire main canvas.","Get two colors visible on the main canvas.","Try to paint as a ghost.","Be a ghost as a color other than yellow.","Land from falling for three whole seconds.","Complete the \"Bounceway\" course.","Complete the \"Ghostspike\" course.","Complete the \"Lie Low\" course.","Complete the \"Islands\" course.","Complete the \"Bottomless\" course.","Hit your head on a ceiling very hard.","Complete a course.","Start a course by going to a green flag.","Die after starting a course.","Use a portal as a ghost.","Paint yourself red.","Paint yourself orange.","D","Paint yourself green.","Paint yourself cyan.","Paint yourself blue.","Paint yourself purple.","Paint yourself pink."];
+let achievementListBitmap, achievementListSprite;
+const bubbleRadius = 10;
+const bubblePointLength = 15;
+const bubblePointWidth = 15;
+const bubbleBoxLength = 280;
+const bubbleBoxWidth = 45;
+const bubblePreviewSize = 0.8;
+const stageOffsetX = -25;
+const stageOffsetY = -25;
+const swap = new Array(1000);
+for (let i = 0; i < 1000; i++) swap[i] = i;
 
 async function loadSVGGraphics(path) {
 	const svgString = await (await fetch('data/svg/' + path)).text();
@@ -56,7 +201,10 @@ async function loadSVGGraphics(path) {
 
 const textures = {};
 const colorWheelStreamAnimation = [1, 0.6, 1.3, 0.3, 0.8, 1.6, 0.3, 1.1, 0.6];
+const flagColors = [0x006600, 0x00CC00, 0x0088FF];
+const finishFlagColors = [0x666666, 0xFFFFFF, 0xFF0000, 0xFF4000, 0xFF8000, 0xFFBF00, 0xFFFF00, 0xBFFF00, 0x80FF00, 0x40FF00, 0x00FF00, 0x00FF40, 0x00FF80, 0x00FFBF, 0x00FFFF, 0x00BFFF, 0x0080FF, 0x0040FF, 0x0000FF, 0x4000FF, 0x8000FF, 0xBF00FF, 0xFF00FF, 0xFF00BF, 0xFF0080, 0xFF0040, 0xFF0000, 0xFC000C, 0xE70D1B, 0xDB1324, 0xCE1A31, 0xC2203D, 0xB62749, 0xAA2D55, 0x9E3461, 0x923A6D, 0x864179, 0x794786, 0x6D4E92, 0x61549E, 0x555BAA, 0x4961B6, 0x3D68C2, 0x316ECE, 0x2475DB, 0x187BE7, 0x0C82F3, 0x0088FF];
 const app = new PIXI.Application();
+
 async function init() {
 	await app.init({
 		width: cwidth,
@@ -128,28 +276,6 @@ async function preload() {
 
 	app.stage.getChildByLabel('loadingText').destroy();
 	setup();
-}
-
-function loadMap() {
-	for (let y = 0; y < mapHeight; y++) {
-		for (let x = 0; x < mapWidth; x++) {
-			map[y][x] = mapS.charCodeAt(y * (mapWidth + 2) + x) - 46;
-		}
-	}
-	for (let i = 0; i < portals.length; i++) {
-		map[portals[i][1]][portals[i][0]] = 100 + i * 4;
-		map[portals[i][3]][portals[i][2]] = 102 + i * 4;
-		map[portals[i][1] + 1][portals[i][0]] = 101 + i * 4;
-		map[portals[i][3] + 1][portals[i][2]] = 103 + i * 4;
-		map[portals[i][1]][portals[i][0] + 1] = 101 + i * 4;
-		map[portals[i][3]][portals[i][2] + 1] = 103 + i * 4;
-		map[portals[i][1] + 1][portals[i][0] + 1] = 101 + i * 4;
-		map[portals[i][3] + 1][portals[i][2] + 1] = 103 + i * 4;
-	}
-	for (let i = 0; i < flags.length; i++) {
-		map[flags[i][1]][flags[i][0]] = 200 + i;
-		map[flags[i][3]][flags[i][2]] = 250 + i;
-	}
 }
 
 let frameRateThrottling = false;
@@ -417,126 +543,12 @@ function addTile(container, tileType) {
 	}
 }
 
-class GoimePlayer{
-	constructor(vx, vy, cx, cy, cr, ax, ay, onob, jumpPower) {
-		this.vx = vx;
-		this.vy = vy;
-		this.cx = cx;
-		this.cy = cy;
-		this.cr = cr;
-		this.ax = ax;
-		this.ay = ay;
-		this.onob = onob;
-		this.jumpPower = jumpPower;
-	}
-
-	jump() {
-		this.vy = -this.jumpPower;
-		this.onob = false;
-	}
-}
-
-let sx = 3750;
-let sy = 8124;
-const p = new GoimePlayer(0,0,sx,sy,0,0,0,false,8);
-let num2 = 0;
-let cameraX = sx - 350;
-let cameraXV = 0;
-let cameraY = sy - 440;
-let oldCameraX = 0;
-let oldCameraY = 0;
-let oldXmouse = 0;
-let oldYmouse = 0;
-const gravity = 0.5;
-const friction = 0.85;
-const power = 0.6;
-const panpower = 50;
-let ghost = 0;
-let ghostKey = false;
-let timer = 0;
-let timerl = 0;
-let timerr = 0;
-let noAchTimer = 0;
-let noAchTimerStart = getTimer();
-let noDeathTimer = 0;
-let noDeathTimerStart = getTimer();
-let flashTimer = 100;
-let portalTimer = 0;
-let noCoinTimer = 0;
-let noCoinTimerStart = getTimer();
-let freefallTimer = 0;
-let money = 0;
-let money2 = 0;
-let deathCount = 0;
-const colorPower = 0.004;
-let colorc = 0.16666666666666666;
-let pColor = 0.16666666666666666;
-let colorMin = 0.16666666666666666;
-let colorMax = 0.16666666666666666;
-let pColorCountInMainCanvas = 0;
-let colorCountInMainCanvas = 0;
-let changedColor = true;
-let curCourse = -1;
-const completedCourses = new Array(flags.length).fill(false);
-const colors = [
-	[[0x101010,0x404040,0x909090,0xD0D0D0],[0x000000,0x202029,0x707070,0xC0C0C0]],
-	[[0x0055BB,0x0088FF,0x00FFFF,0xFFFFFF],[0x003388,0x0055BB,0x00FFFF,0xFFFFFF]]];
-const numbers = [[[1,1,1],[1,0,1],[1,0,1],[1,0,1],[1,1,1]],[[0,1,0],[0,1,0],[0,1,0],[0,1,0],[0,1,0]],[[1,1,0],[0,0,1],[0,1,0],[1,0,0],[1,1,1]],[[1,1,0],[0,0,1],[1,1,0],[0,0,1],[1,1,0]],[[1,0,1],[1,0,1],[1,1,1],[0,0,1],[0,0,1]],[[1,1,1],[1,0,0],[1,1,0],[0,0,1],[1,1,0]],[[0,1,0],[1,0,0],[1,1,0],[1,0,1],[0,1,0]],[[1,1,1],[0,0,1],[0,0,1],[0,1,0],[0,1,0]],[[1,1,1],[1,0,1],[1,1,1],[1,0,1],[1,1,1]],[[0,1,0],[1,0,1],[0,1,1],[0,0,1],[0,1,0]]];
-const achievements = new Array(1000).fill(false);
-const achShowing = new Array(0);
-let achCount = 0;
-const startTimer = getTimer();
-// [0] solid
-// [1] hurts
-// [2] is trampoline
-// [3] (unused)
-// [4] impermeable to ghosts
-// [5] frame count
-const tileProperties = [
-	[false,false,false,true, false,0 ], // . Air
-	[true, false,false,true, false,1 ], // / Red tile
-	[true, false,false,true, false,1 ], // 0 Green tile
-	[true, false,false,true, false,1 ], // 1 Gray spikes
-	[false,true, false,true, false,1 ], // 2 Yellow tile
-	[true, false,false,true, false,1 ], // 3 Gray tile
-	[true, false,false,true, false,1 ], // 4 Wood tile
-	[true, false,true, true, false,11], // 5 Trampoline
-	[false,true, false,true, false,1 ], // 6 Fire
-	[true, false,false,true, false,1 ], // 7 White tile
-	[true, false,false,true, false,1 ], // 8 Light blue tile
-	[true, false,false,true, true, 1 ], // 9 Black tile
-	[false,true, false,true, true, 1 ], // : Dark spikes
-	[false,false,false,true, false,1 ], // ; Coin
-	[true, false,false,true, false,2 ], // < Spawn point (left)
-	[true, false,false,true, false,2 ], // = Spawn point (right)
-	[true, false,false,true, false,1 ], // > Color wheel
-	[true, false,false,true, false,0 ], // ? Tangible invisible tile
-	[true, false,false,true, false,1 ], // @ Temporary tile
-	[false,false,false,true, false,1 ], // A Paintable tile
-	[false,false,false,true, false,1 ], // B Unused and unpaintable paintable tile duplicate
-	[false,false,false,false,false,1 ], // C Guy
-];
-const achievementNames = ["Best thing ever","Bonk","Bouncy ball","To the left!","Going the right way","Painful landing","Full sprint","Very painful landing","Play for a second","A minute minute","Uneventful","The inevitable","Ouch!","Die from starvation","Boing!","Red Zone","Don\'t get splinters","Green zone","Yellow zone","Migration","More details","Bright blue bubble","Gray zone","Survive","Survive and thrive","Supernatural","Revival","Ghostly death","Paranormal step","Empty list","Ghosts cheat death","Left smush","Right smush","Blue zone","Join the work force","I hate nickels","Penny pincher","Teleporter","Splash of color","Across the rainbow","Bull in a china shop","Unemployed","A colorful way to die","No one can die twice...","Clumsy","White zone","Very clumsy","Too clumsy","Way too clumsy","Coin collector","Coin snatcher","Leave a mark","A big canvas","A second coat","Uniform painter","Paint everywhere","Multicolor","Ghost make bad painters","Exotic ghost","Extremely painful landing","Bounceway","Ghostspike","Lie Low","Islands","Bottomless","Superbonk","Finish line","Giving it a try","Daredevil meets doom","Ghosts in the portal","Seeing red","Juicy Orange","N","Green with Envy","Waterdrop","Pale blue dot","You are a grape","Fuchsiania"];
-const achievementDescriptions = ["Start playing this game.","Hit your head on a ceiling.","Jump.","Move left.","Move right.","Land.","Reach maximum running speed.","Land from a high distance.","Until you get to the second second!","Play for a minute.","Don\'t get an achievement for ten seconds.","Die.","Touch a deadly block.","Die from falling into the abyss.","Bounce on a trampoline.","Walk on red land.","Walk on wood.","Walk on green land.","Walk on yellow land.","Set a different spawn point.","Roll over an achievement.","Roll over an achieved achievement.","Walk on gray land.","Don\'t die for ten seconds.","Don\'t die for thirty seconds.","Become a ghost.","Turn from ghost to normal.","Die as a ghost.","Land as a ghost (on black land).","Get the list of recent achievements blank.","Be in front of a spikeball as a ghost.","Press against a wall to the left.","Press against a wall to the right.","Walk on blue land.","Collect a coin.","Collect five coins.","Collect all 100 coins.","Use a portal.","Paint yourself a different color.","Paint yourself all possible colors.","Destroy a temporary block.","Go thirty seconds without collecting a coin.","Die as a color other than yellow.","Die twice.","Die five times.","Walk on white land.","Die 25 times.","Die 50 times.","Die 100 times.","Collect 10 coins","Collect 20 coins.","Paint a canvas.","Paint the main canvas.","Paint a canvas twice with different colors.","Paint the main canvas entirely one color.","Paint the entire main canvas.","Get two colors visible on the main canvas.","Try to paint as a ghost.","Be a ghost as a color other than yellow.","Land from falling for three whole seconds.","Complete the \"Bounceway\" course.","Complete the \"Ghostspike\" course.","Complete the \"Lie Low\" course.","Complete the \"Islands\" course.","Complete the \"Bottomless\" course.","Hit your head on a ceiling very hard.","Complete a course.","Start a course by going to a green flag.","Die after starting a course.","Use a portal as a ghost.","Paint yourself red.","Paint yourself orange.","D","Paint yourself green.","Paint yourself cyan.","Paint yourself blue.","Paint yourself purple.","Paint yourself pink."];
-let achievementListBitmap, achievementListSprite;
-const bubbleRadius = 10;
-const bubblePointLength = 15;
-const bubblePointWidth = 15;
-const bubbleBoxLength = 280;
-const bubbleBoxWidth = 45;
-const bubblePreviewSize = 0.8;
-const stageOffsetX = -25;
-const stageOffsetY = -25;
-const swap = new Array(1000);
-for (let i = 0; i < 1000; i++) {
-	swap[i] = i;
-}
 
 // Game functions
 function drawach(num, t) {
 	const x = getX(num);
 	const y = getY(num);
-	const colorType = checkerboard(x,y);
+	const colorType = checkerboard(x, y);
 	achievementListBitmap
 		.rect(x * 15, y * 7, 15, 7)
 		.fill(getColor(t, colorType, 0));
@@ -544,15 +556,15 @@ function drawach(num, t) {
 		.rect(x * 15, y * 7, 14, 6)
 		.fill(getColor(t, colorType, 1));
 	num2 = num + 1;
-	drawnum(num2 % 10,x * 15 + 11,y * 7 + 1,getColor(t,colorType,2));
+	drawnum(num2 % 10, x * 15 + 11, y * 7 + 1, getColor(t, colorType, 2));
 	if (num2 >= 10) {
-		drawnum(Math.floor(num2 / 10) % 10,x * 15 + 7,y * 7 + 1,getColor(t,colorType,2));
+		drawnum(Math.floor(num2 / 10) % 10, x * 15 + 7, y * 7 + 1, getColor(t, colorType, 2));
 	}
 	if (num2 >= 100) {
-		drawnum(Math.floor(num2 / 100) % 10,x * 15 + 3,y * 7 + 1,getColor(t,colorType,2));
+		drawnum(Math.floor(num2 / 100) % 10, x * 15 + 3, y * 7 + 1, getColor(t, colorType, 2));
 	}
 	if (num2 >= 1000) {
-		drawnum(1,x * 15,y * 7 + 1,getColor(t,colorType,2));
+		drawnum(1, x * 15, y * 7 + 1, getColor(t, colorType, 2));
 	}
 }
 function drawnum(num, nx, ny, color) {
@@ -574,27 +586,27 @@ function flushAchievementList() {
 function drawbubble(num, bubble, yoffset, pointer) {
 	const x = getX(num);
 	const y = getY(num);
-	const colorType = checkerboard(x,y);
+	const colorType = checkerboard(x, y);
 	const backing = bubble.getChildByLabel('backing')
 	backing.clear();
-	backing.moveTo((- bubblePointLength) * pointer,(- bubblePointWidth) / 2 + yoffset);
+	backing.moveTo((- bubblePointLength) * pointer, (- bubblePointWidth) / 2 + yoffset);
 	if (pointer == 1) {
-		backing.lineTo(0,0);
+		backing.lineTo(0, 0);
 	}
 	backing
-		.lineTo((- bubblePointLength) * pointer,bubblePointWidth / 2 + yoffset)
-		.lineTo((- bubblePointLength) * pointer,bubbleBoxWidth / 2 - bubbleRadius + yoffset)
-		.quadraticCurveTo((- bubblePointLength) * pointer,bubbleBoxWidth / 2 + yoffset,(- bubblePointLength) * pointer - bubbleRadius,bubbleBoxWidth / 2 + yoffset)
-		.lineTo((- bubblePointLength) * pointer - bubbleBoxLength + bubbleRadius,bubbleBoxWidth / 2 + yoffset)
-		.quadraticCurveTo((- bubblePointLength) * pointer - bubbleBoxLength,bubbleBoxWidth / 2 + yoffset,(- bubblePointLength) * pointer - bubbleBoxLength,bubbleBoxWidth / 2 - bubbleRadius + yoffset)
-		.lineTo((- bubblePointLength) * pointer - bubbleBoxLength,(- bubbleBoxWidth) / 2 + bubbleRadius + yoffset)
-		.quadraticCurveTo((- bubblePointLength) * pointer - bubbleBoxLength,(- bubbleBoxWidth) / 2 + yoffset,(- bubblePointLength) * pointer - bubbleBoxLength + bubbleRadius,(- bubbleBoxWidth) / 2 + yoffset)
-		.lineTo((- bubblePointLength) * pointer - bubbleRadius,(- bubbleBoxWidth) / 2 + yoffset)
-		.quadraticCurveTo((- bubblePointLength) * pointer,(- bubbleBoxWidth) / 2 + yoffset,(- bubblePointLength) * pointer,(- bubbleBoxWidth) / 2 + bubbleRadius + yoffset)
-		.fill(getColor(achievements[num],colorType,1));
+		.lineTo((- bubblePointLength) * pointer, bubblePointWidth / 2 + yoffset)
+		.lineTo((- bubblePointLength) * pointer, bubbleBoxWidth / 2 - bubbleRadius + yoffset)
+		.quadraticCurveTo((- bubblePointLength) * pointer, bubbleBoxWidth / 2 + yoffset, (- bubblePointLength) * pointer - bubbleRadius, bubbleBoxWidth / 2 + yoffset)
+		.lineTo((- bubblePointLength) * pointer - bubbleBoxLength + bubbleRadius, bubbleBoxWidth / 2 + yoffset)
+		.quadraticCurveTo((- bubblePointLength) * pointer - bubbleBoxLength, bubbleBoxWidth / 2 + yoffset, (- bubblePointLength) * pointer - bubbleBoxLength, bubbleBoxWidth / 2 - bubbleRadius + yoffset)
+		.lineTo((- bubblePointLength) * pointer - bubbleBoxLength, (- bubbleBoxWidth) / 2 + bubbleRadius + yoffset)
+		.quadraticCurveTo((- bubblePointLength) * pointer - bubbleBoxLength, (- bubbleBoxWidth) / 2 + yoffset, (- bubblePointLength) * pointer - bubbleBoxLength + bubbleRadius, (- bubbleBoxWidth) / 2 + yoffset)
+		.lineTo((- bubblePointLength) * pointer - bubbleRadius, (- bubbleBoxWidth) / 2 + yoffset)
+		.quadraticCurveTo((- bubblePointLength) * pointer, (- bubbleBoxWidth) / 2 + yoffset, (- bubblePointLength) * pointer, (- bubbleBoxWidth) / 2 + bubbleRadius + yoffset)
+		.fill(getColor(achievements[num], colorType, 1));
 	bubble.getChildByLabel('achNumText').text = num + 1 + '  ' + achievementNames[num];
 	bubble.getChildByLabel('achNumText').y = -bubbleBoxWidth / 2 + yoffset;
-	bubble.getChildByLabel('achNumText').style.fill = getColor(achievements[num],colorType,3);
+	bubble.getChildByLabel('achNumText').style.fill = getColor(achievements[num], colorType, 3);
 	if (achievements[num]) {
 		bubble.getChildByLabel('descriptionText').text = achievementDescriptions[num];
 		bubble.getChildByLabel('descriptionText').y = -bubbleBoxWidth / 2 + yoffset + 23;
@@ -652,7 +664,7 @@ function makeSideInvisible(i) {
 }
 function makeTBInvisible(i) {
 	for (let j = 0; j < 4; j++) {
-		const chunkX = getChunkX(j, oldCameraX,mapWidth / 10);
+		const chunkX = getChunkX(j, oldCameraX, mapWidth / 10);
 		const chunkY = getChunkY(i, oldCameraY, mapHeight / 10);
 		if (chunkY >= 0 && chunkY < mapHeight / 10) {
 			app.stage.getChildByLabel(`mapPiece${chunkX},${chunkY}`).visible = false;
@@ -660,14 +672,14 @@ function makeTBInvisible(i) {
 	}
 }
 function drawmap() {
-	if (getChunkX(0,cameraX,mapWidth / 10) > getChunkX(0,oldCameraX,mapWidth / 10) || getChunkX(0,cameraX,mapWidth / 10) < getChunkX(0,oldCameraX,mapWidth / 10)) {
+	if (getChunkX(0, cameraX, mapWidth / 10) > getChunkX(0, oldCameraX, mapWidth / 10) || getChunkX(0, cameraX, mapWidth / 10) < getChunkX(0, oldCameraX, mapWidth / 10)) {
 		makeSideInvisible(0);
 		makeSideInvisible(3);
 	}
-	if (getChunkY(0,cameraY,mapHeight / 10) > getChunkY(0,oldCameraY,mapHeight / 10)) {
+	if (getChunkY(0, cameraY, mapHeight / 10) > getChunkY(0, oldCameraY, mapHeight / 10)) {
 		makeTBInvisible(0);
 	}
-	if (getChunkY(0,cameraY,mapHeight / 10) < getChunkY(0,oldCameraY,mapHeight / 10)) {
+	if (getChunkY(0, cameraY, mapHeight / 10) < getChunkY(0, oldCameraY, mapHeight / 10)) {
 		makeTBInvisible(3);
 	}
 	for (let y = 0; y < 4; y++) {
@@ -708,19 +720,19 @@ function blockAt(x, y) {
 		return 0;
 	}
 	let tileX = Math.floor(x / 25);
-	tileX = loopOver(tileX,0,mapWidth);
+	tileX = loopOver(tileX, 0, mapWidth);
 	return map[tileY][tileX];
 }
 function setBlockAt(x, y, t) {
 	const tileY = Math.floor(y / 25);
 	if (tileY >= 0 && tileY < mapHeight) {
 		let tileX = Math.floor(x / 25);
-		tileX = loopOver(tileX,0,mapWidth);
+		tileX = loopOver(tileX, 0, mapWidth);
 		map[tileY][tileX] = t;
 		if (tileProperties[t][5] > 0) {
-			blockMovieAt(x,y).getChildByLabel('main').context = tileProperties[t][5] == 1 ? textures.tiles[t] : textures.tiles[t][0];
+			blockMovieAt(x, y).getChildByLabel('main').context = tileProperties[t][5] == 1 ? textures.tiles[t] : textures.tiles[t][0];
 		} else {
-			removeBlockAt(x,y);
+			removeBlockAt(x, y);
 		}
 	}
 }
@@ -728,7 +740,7 @@ function blockMovieAt(x, y) {
 	const tileY = Math.floor(y / 25);
 	if (tileY < 0 || tileY > mapHeight) return 0;
 	let tileX = Math.floor(x / 25);
-	tileX = loopOver(tileX,0,mapWidth);
+	tileX = loopOver(tileX, 0, mapWidth);
 	return app.stage
 		.getChildByLabel(`mapPiece${Math.floor(tileX / 10)},${Math.floor(tileY / 10)}`)
 		.getChildByLabel(`tile${tileX % 10},${tileY % 10}`);
@@ -747,7 +759,7 @@ function removeBlockAt(x, y) {
 	const tileY = Math.floor(y / 25);
 	if (tileY < 0 || tileY > mapHeight) return 0;
 	let tileX = Math.floor(x / 25);
-	tileX = loopOver(tileX,0,mapWidth);
+	tileX = loopOver(tileX, 0, mapWidth);
 	map[tileY][tileX] = 0;
 	app.stage
 		.getChildByLabel(`mapPiece${Math.floor(tileX / 10)},${Math.floor(tileY / 10)}`)
@@ -758,10 +770,10 @@ function achget(num) {
 	if (!achievements[swappedNum]) {
 		console.log(achievementNames[num]);
 		noAchTimerStart = getTimer();
-		drawach(swappedNum,true);
+		drawach(swappedNum, true);
 		flushAchievementList();
 		achievements[swappedNum] = true;
-		achShowing.push([swappedNum, 700 + bubbleBoxLength,lowestPossibleAch()]);
+		achShowing.push([swappedNum, 700 + bubbleBoxLength, lowestPossibleAch()]);
 
 		const bubble = new PIXI.Container({
 			parent: app.stage,
@@ -770,8 +782,8 @@ function achget(num) {
 			y: achShowing[achShowing.length - 1][2],
 			scale: bubblePreviewSize,
 		});
-		doBubbleText(bubble,0);
-		drawbubble(swappedNum,bubble,0,0);
+		doBubbleText(bubble, 0);
+		drawbubble(swappedNum, bubble, 0, 0);
 		achCount++;
 	}
 }
@@ -810,27 +822,13 @@ function die() {
 	flashTimer = 0;
 	deathCount++;
 	achget(11);
-	if (deathCount >= 2) {
-		achget(43);
-	}
-	if (deathCount >= 5) {
-		achget(44);
-	}
-	if (deathCount >= 25) {
-		achget(46);
-	}
-	if (deathCount >= 50) {
-		achget(47);
-	}
-	if (deathCount >= 100) {
-		achget(48);
-	}
-	if (curCourse >= 0) {
-		achget(68);
-	}
-	if (ghost == 1) {
-		achget(27);
-	}
+	if (deathCount >= 2) achget(43);
+	if (deathCount >= 5) achget(44);
+	if (deathCount >= 25) achget(46);
+	if (deathCount >= 50) achget(47);
+	if (deathCount >= 100) achget(48);
+	if (curCourse >= 0) achget(68);
+	if (ghost == 1) achget(27);
 	if (pColor <= 0.13333333333333333 || pColor >= 0.1875) {
 		achget(42);
 	}
@@ -841,38 +839,38 @@ function die() {
 	// }
 }
 function blockUnderType(x, y, t) {
-	if (blockAt(x,y) == t) {
+	if (blockAt(x, y) == t) {
 		return 2;
 	}
-	if (x % 25 >= 16 && blockAt(x + 25,y) == t) {
+	if (x % 25 >= 16 && blockAt(x + 25, y) == t) {
 		return 3;
 	}
-	if (x % 25 <= 9 && blockAt(x - 25,y) == t) {
+	if (x % 25 <= 9 && blockAt(x - 25, y) == t) {
 		return 1;
 	}
 }
 function blockStraightUnderType(x, y, t) {
-	if (blockAt(x,y) == t) {
+	if (blockAt(x, y) == t) {
 		return true;
 	}
 }
 function blockUnderProp(x, y, prop) {
-	if (tileProperties[blockAt(x,y)]?.[prop]) {
+	if (tileProperties[blockAt(x, y)]?.[prop]) {
 		return 2;
 	}
-	if (x % 25 >= 16 && tileProperties[blockAt(x + 25,y)]?.[prop]) {
+	if (x % 25 >= 16 && tileProperties[blockAt(x + 25, y)]?.[prop]) {
 		return 3;
 	}
-	if (x % 25 <= 9 && tileProperties[blockAt(x - 25,y)]?.[prop]) {
+	if (x % 25 <= 9 && tileProperties[blockAt(x - 25, y)]?.[prop]) {
 		return 1;
 	}
 }
 function playerIntersect() {
-	return tileProperties[blockAt(p.cx - 10,p.cy - 1)]?.[0] || tileProperties[blockAt(p.cx + 10,p.cy - 1)]?.[0] || tileProperties[blockAt(p.cx - 10,p.cy - 20)]?.[0] || tileProperties[blockAt(p.cx + 10,p.cy - 20)]?.[0];
+	return tileProperties[blockAt(p.cx - 10, p.cy - 1)]?.[0] || tileProperties[blockAt(p.cx + 10, p.cy - 1)]?.[0] || tileProperties[blockAt(p.cx - 10, p.cy - 20)]?.[0] || tileProperties[blockAt(p.cx + 10, p.cy - 20)]?.[0];
 }
 function getCoinAt(x, y) {
-	if (blockAt(x,y) == 13) {
-		setBlockAt(x,y,0);
+	if (blockAt(x, y) == 13) {
+		setBlockAt(x, y, 0);
 		money++;
 		money2++;
 		noCoinTimerStart = getTimer();
@@ -892,7 +890,7 @@ function getCoinAt(x, y) {
 	}
 }
 function getPortalAt(x, y) {
-	const t = blockAt(x,y);
+	const t = blockAt(x, y);
 	if (t >= 100 && t < 200) {
 		if (portalTimer >= 15) {
 			achget(37);
@@ -914,10 +912,10 @@ function getPortalAt(x, y) {
 	}
 }
 function solidAt(x, y) {
-	return tileProperties[blockAt(x,y)]?.[0] && (ghost == 0 || tileProperties[blockAt(x,y)]?.[4]);
+	return tileProperties[blockAt(x, y)]?.[0] && (ghost == 0 || tileProperties[blockAt(x, y)]?.[4]);
 }
 function painfulAt(x, y) {
-	return tileProperties[blockAt(x,y)]?.[1] && (ghost == 0 || tileProperties[blockAt(x,y)]?.[4]);
+	return tileProperties[blockAt(x, y)]?.[1] && (ghost == 0 || tileProperties[blockAt(x, y)]?.[4]);
 }
 function minutes() {
 	return Math.floor(timer / 60000);
@@ -960,7 +958,7 @@ function doBubbleText(bub, xoffset) {
 	});
 }
 function turnSpawnOff(x, y) {
-	const side = setSpawnI(x,y);
+	const side = setSpawnI(x, y);
 	const tileX = getTileX(x + side);
 	const tileX2 = getTileX(x + side + 25);
 	const tileY = getTileY(y + 5);
@@ -972,7 +970,7 @@ function turnSpawnOff(x, y) {
 	}
 }
 function turnSpawnOn(x, y) {
-	const side = setSpawnI(x,y);
+	const side = setSpawnI(x, y);
 	const tileX = getTileX(x + side);
 	const tileX2 = getTileX(x + side + 25);
 	const tileY = getTileY(y + 5);
@@ -986,22 +984,22 @@ function turnSpawnOn(x, y) {
 	sy = Math.floor(y / 25) * 25;
 }
 function setSpawnI(x, y) {
-	if (blockStraightUnderType(x,y + 5,14)) {
+	if (blockStraightUnderType(x, y + 5, 14)) {
 		return 0;
 	}
-	if (blockStraightUnderType(x,y + 5,15)) {
+	if (blockStraightUnderType(x, y + 5, 15)) {
 		return -25;
 	}
-	if (blockStraightUnderType(x - 25,y + 5,15)) {
+	if (blockStraightUnderType(x - 25, y + 5, 15)) {
 		return -50;
 	}
-	if (blockStraightUnderType(x + 25,y + 5,14)) {
+	if (blockStraightUnderType(x + 25, y + 5, 14)) {
 		return 25;
 	}
 }
 function vanish(x, y) {
-	if (blockAt(x,y) == 18) {
-		removeBlockAt(x,y);
+	if (blockAt(x, y) == 18) {
+		removeBlockAt(x, y);
 		achget(40);
 	}
 }
@@ -1012,12 +1010,12 @@ function setCurCol(x, y, i) {
 	colorMap[Math.floor(y / 25) - 163][Math.floor(x / 25) - 83] = i;
 }
 function paint(x, y) {
-	if (blockAt(x,y) == 19) {
+	if (blockAt(x, y) == 19) {
 		if (ghost == 0) {
-			if (pColor != curCol(x,y)) {
+			if (pColor != curCol(x, y)) {
 				achget(51);
 				achget(52);
-				if (curCol(x,y) == -1) {
+				if (curCol(x, y) == -1) {
 					colorCountInMainCanvas++;
 					if (colorCountInMainCanvas >= 99) {
 						achget(55);
@@ -1025,7 +1023,7 @@ function paint(x, y) {
 				} else {
 					achget(53);
 				}
-				blockMovieAt(x,y).getChildByLabel('tileCanvas')
+				blockMovieAt(x, y).getChildByLabel('tileCanvas')
 					.clear()
 					.rect(0, 0, 25, 25)
 					.fill(getRGB(pColor));
@@ -1033,13 +1031,13 @@ function paint(x, y) {
 					getPColorCountInMainCanvas(pColor);
 				}
 				changedColor = false;
-				if (getSimpleColor(curCol(x,y)) != getSimpleColor(pColor)) {
+				if (getSimpleColor(curCol(x, y)) != getSimpleColor(pColor)) {
 					pColorCountInMainCanvas++;
 				}
 				if (pColorCountInMainCanvas >= 99) {
 					achget(54);
 				}
-				setCurCol(x,y,pColor);
+				setCurCol(x, y, pColor);
 			}
 		} else {
 			achget(57);
@@ -1094,9 +1092,9 @@ function drawPlayer() {
 		.stroke(0x000000);
 }
 function getRGB(a) {
-	const g = Math.floor(Math.min(Math.max(2 - Math.abs(a - 0.3333333333333333) * 6,0),1) * 255);
-	const b = Math.floor(Math.min(Math.max(2 - Math.abs(a - 0.6666666666666666) * 6,0),1) * 255);
-	const r = Math.floor(Math.min(Math.max(Math.abs(a - 0.5) * 6 - 1,0),1) * 255);
+	const g = Math.floor(Math.min(Math.max(2 - Math.abs(a - 0.3333333333333333) * 6, 0), 1) * 255);
+	const b = Math.floor(Math.min(Math.max(2 - Math.abs(a - 0.6666666666666666) * 6, 0), 1) * 255);
+	const r = Math.floor(Math.min(Math.max(Math.abs(a - 0.5) * 6 - 1, 0), 1) * 255);
 	return r * 0x10000 + g * 0x100 + b;
 }
 function getSimpleColor(i) {
@@ -1127,21 +1125,21 @@ function getSimpleColor(i) {
 	return 7;
 }
 function checkFlag(x, y) {
-	const t = blockAt(x,y);
+	const t = blockAt(x, y);
 	if (t >= 200 && t < 250) {
 		achget(67);
 		if (curCourse >= 0 && curCourse != t - 200) {
 			if (completedCourses[curCourse]) {
-				setFlagColor(blockMovieAt(flags[curCourse][0] * 25,flags[curCourse][1] * 25), 0, 2);
-				setFlagColor(blockMovieAt(flags[curCourse][2] * 25,flags[curCourse][3] * 25), 1, finishFlagColors.length - 1);
+				setFlagColor(blockMovieAt(flags[curCourse][0] * 25, flags[curCourse][1] * 25), 0, 2);
+				setFlagColor(blockMovieAt(flags[curCourse][2] * 25, flags[curCourse][3] * 25), 1, finishFlagColors.length - 1);
 			} else {
-				setFlagColor(blockMovieAt(flags[curCourse][0] * 25,flags[curCourse][1] * 25), 0, 0);
-				setFlagColor(blockMovieAt(flags[curCourse][2] * 25,flags[curCourse][3] * 25), 1, 0);
+				setFlagColor(blockMovieAt(flags[curCourse][0] * 25, flags[curCourse][1] * 25), 0, 0);
+				setFlagColor(blockMovieAt(flags[curCourse][2] * 25, flags[curCourse][3] * 25), 1, 0);
 			}
 		}
 		curCourse = t - 200;
 		setFlagColor(blockMovieAt(x, y), 0, 1);
-		setFlagColor(blockMovieAt(flags[curCourse][2] * 25,flags[curCourse][3] * 25), 1, 1);
+		setFlagColor(blockMovieAt(flags[curCourse][2] * 25, flags[curCourse][3] * 25), 1, 1);
 	}
 	if (t == curCourse + 250) {
 		achget(66);
@@ -1151,12 +1149,11 @@ function checkFlag(x, y) {
 		if (curCourse == 3) achget(63);
 		if (curCourse == 4) achget(64);
 		setFlagColor(blockMovieAt(x, y), 1, 2);
-		setFlagColor(blockMovieAt(flags[curCourse][0] * 25,flags[curCourse][1] * 25), 0, 2);
+		setFlagColor(blockMovieAt(flags[curCourse][0] * 25, flags[curCourse][1] * 25), 0, 2);
 		completedCourses[curCourse] = true;
 		curCourse = -1;
 	}
 }
-
 function setFlagColor(m, flagType, frame) {
 	const flag = m.getChildByLabel('flag')
 	flag.tint = (flagType == 0 ? flagColors : finishFlagColors)[frame];
@@ -1165,18 +1162,12 @@ function setFlagColor(m, flagType, frame) {
 
 function draw() {
 	achget(0);
-	if (achShowing.length == 0) {
-		achget(29);
-	}
-	if (ghost == 1 && blockAt(p.cx,p.cy - 5) == 4) {
-		achget(30);
-	}
-	if (ghost == 2 && !playerIntersect()) {
-		ghost = 0;
-	}
-	if (ghost == 1 && p.onob) {
-		achget(28);
-	}
+	if (achShowing.length == 0) achget(29);
+	if (ghost == 1 && blockAt(p.cx, p.cy - 5) == 4) achget(30);
+	if (ghost == 2 && !playerIntersect()) ghost = 0;
+	if (ghost == 1 && p.onob) achget(28);
+
+	// Achievement bubbles
 	for (let i = 0; i < achShowing.length; i++) {
 		const num = achCount - achShowing.length + i;
 		if (achShowing[i][1] < 0) {
@@ -1197,8 +1188,8 @@ function draw() {
 	if (Math.abs(_xmouse - 774.5) <= 74.5 && Math.abs(_ymouse - 349.5) <= 349.5) {
 		if (oldXmouse != _xmouse || oldYmouse != _ymouse || noAchTimer == 1) {
 			_root.bubble.visible = true;
-			const index = getIndex(Math.floor((_xmouse - 700) / 15),Math.floor(_ymouse / 7));
-			drawbubble(index, _root.bubble, getYoffset(_ymouse),1);
+			const index = getIndex(Math.floor((_xmouse - 700) / 15), Math.floor(_ymouse / 7));
+			drawbubble(index, _root.bubble, getYoffset(_ymouse), 1);
 			_root.bubble.x = _xmouse;
 			_root.bubble.y = _ymouse;
 			achget(20);
@@ -1209,24 +1200,22 @@ function draw() {
 	} else if (oldXmouse >= 700) {
 		_root.bubble.visible = false;
 	}
+
+	// Game inputs
 	if (_keysDown[37]) {
 		p.vx -= power * (1 + timerl * 0.02);
-		timerl = Math.min(timerl + 1,100);
+		timerl = Math.min(timerl + 1, 100);
 		timerr = 0;
-		p.cr = Math.max(p.cr - 0.8,-8);
+		p.cr = Math.max(p.cr - 0.8, -8);
 		achget(3);
-	} else {
-		timerl = 0;
-	}
+	} else timerl = 0;
 	if (_keysDown[39]) {
 		p.vx += power * (1 + timerr * 0.02);
-		timerr = Math.min(timerr + 1,100);
+		timerr = Math.min(timerr + 1, 100);
 		timerl = 0;
-		p.cr = Math.min(p.cr + 0.8,8);
+		p.cr = Math.min(p.cr + 0.8, 8);
 		achget(4);
-	} else {
-		timerr = 0;
-	}
+	} else timerr = 0;
 	if ((_keysDown[38] || _keysDown[32]) && p.onob) {
 		p.jump();
 		achget(2);
@@ -1251,49 +1240,45 @@ function draw() {
 			}
 		}
 		ghostKey = true;
-	} else {
-		ghostKey = false;
-	}
+	} else ghostKey = false;
+
+	// Player physics
 	p.vx *= friction;
 	if (!p.onob) {
-		p.vy = Math.max(Math.min(p.vy + gravity,20), -20);
-		if (p.vy > 0) {
-			freefallTimer++;
-		}
+		p.vy = Math.max(Math.min(p.vy + gravity, 20), -20);
+		if (p.vy > 0) freefallTimer++;
 	}
-	if (Math.abs(p.vx) >= 10.1) {
-		achget(6);
-	}
+	if (Math.abs(p.vx) >= 10.1) achget(6);
 	p.cx += p.vx;
 	p.cy += p.vy;
 	if (p.cy >= mapHeight * 25 + 500) {
 		achget(13);
 		die();
 	}
-	if (p.vy > p.cy % 25 && (solidAt(p.cx,p.cy) && !solidAt(p.cx,p.cy - 25) || p.cx % 25 >= 16 && (solidAt(p.cx + 25,p.cy) && !solidAt(p.cx + 25,p.cy - 25)) || p.cx % 25 <= 9 && (solidAt(p.cx - 25,p.cy) && !solidAt(p.cx - 25,p.cy - 25)))) {
+	if (p.vy > p.cy % 25 && (solidAt(p.cx, p.cy) && !solidAt(p.cx, p.cy - 25) || p.cx % 25 >= 16 && (solidAt(p.cx + 25, p.cy) && !solidAt(p.cx + 25, p.cy - 25)) || p.cx % 25 <= 9 && (solidAt(p.cx - 25, p.cy) && !solidAt(p.cx - 25, p.cy - 25)))) {
 		achget(5);
 		if (p.vy > 17) {
 			achget(7);
 		}
-		if (blockUnderType(p.cx,p.cy,1) > 0) {
+		if (blockUnderType(p.cx, p.cy, 1) > 0) {
 			achget(15);
 		}
-		if (blockUnderType(p.cx,p.cy,2) > 0) {
+		if (blockUnderType(p.cx, p.cy, 2) > 0) {
 			achget(16);
 		}
-		if (blockUnderType(p.cx,p.cy,3) > 0) {
+		if (blockUnderType(p.cx, p.cy, 3) > 0) {
 			achget(17);
 		}
-		if (blockUnderType(p.cx,p.cy,5) > 0) {
+		if (blockUnderType(p.cx, p.cy, 5) > 0) {
 			achget(18);
 		}
-		if (blockUnderType(p.cx,p.cy,6) > 0) {
+		if (blockUnderType(p.cx, p.cy, 6) > 0) {
 			achget(22);
 		}
-		if (blockUnderType(p.cx,p.cy,10) > 0) {
+		if (blockUnderType(p.cx, p.cy, 10) > 0) {
 			achget(33);
 		}
-		if (blockUnderType(p.cx,p.cy,9) > 0) {
+		if (blockUnderType(p.cx, p.cy, 9) > 0) {
 			achget(45);
 		}
 		if (freefallTimer > 80) {
@@ -1304,15 +1289,15 @@ function draw() {
 		p.vy = 0;
 		freefallTimer = 0;
 	}
-	if (p.onob && (blockUnderType(p.cx,p.cy,14) > 0 || blockUnderType(p.cx,p.cy,15))) {
+	if (p.onob && (blockUnderType(p.cx, p.cy, 14) > 0 || blockUnderType(p.cx, p.cy, 15))) {
 		if (p.cy != 8125 || Math.abs(p.cx - 3375) > 50) {
 			achget(19);
 		}
-		turnSpawnOff(sx,sy);
-		turnSpawnOn(p.cx,p.cy);
+		turnSpawnOff(sx, sy);
+		turnSpawnOn(p.cx, p.cy);
 	}
 	if (ghost == 0) {
-		const bouncy = blockUnderProp(p.cx,p.cy,2);
+		const bouncy = blockUnderProp(p.cx, p.cy, 2);
 		if (bouncy > 0) {
 			achget(14);
 			const tileX = getTileX(p.cx + (bouncy * 25 - 50));
@@ -1326,10 +1311,10 @@ function draw() {
 			p.vy = -14.7;
 		}
 	}
-	if (p.onob && !solidAt(p.cx,p.cy) && (p.cx % 25 <= 17 || !solidAt(p.cx + 25,p.cy)) && (p.cx % 25 >= 8 || !solidAt(p.cx - 25,p.cy))) {
+	if (p.onob && !solidAt(p.cx, p.cy) && (p.cx % 25 <= 17 || !solidAt(p.cx + 25, p.cy)) && (p.cx % 25 >= 8 || !solidAt(p.cx - 25, p.cy))) {
 		p.onob = false;
 	}
-	if (p.vy < 0 && (solidAt(p.cx,p.cy - 20) || p.cx % 25 >= 16 && solidAt(p.cx + 25,p.cy - 20) || p.cx % 25 <= 9 && solidAt(p.cx - 25,p.cy - 20))) {
+	if (p.vy < 0 && (solidAt(p.cx, p.cy - 20) || p.cx % 25 >= 16 && solidAt(p.cx + 25, p.cy - 20) || p.cx % 25 <= 9 && solidAt(p.cx - 25, p.cy - 20))) {
 		p.cy = Math.floor((p.cy + 30) / 25) * 25 - 5;
 		achget(1);
 		if (p.vy < -9) {
@@ -1337,74 +1322,66 @@ function draw() {
 		}
 		p.vy = 0;
 	}
-	if (p.vx > 0 && (solidAt(p.cx + 10,p.cy) && p.cy % 25 > 0 || solidAt(p.cx + 10,p.cy - 25) && p.cy % 25 < 20)) {
-		if (blockAt(p.cx - 40,p.cy) == 16 && p.onob) {
+	if (p.vx > 0 && (solidAt(p.cx + 10, p.cy) && p.cy % 25 > 0 || solidAt(p.cx + 10, p.cy - 25) && p.cy % 25 < 20)) {
+		if (blockAt(p.cx - 40, p.cy) == 16 && p.onob) {
 			colorc += colorPower;
-			setColorWheel(blockMovieAt(p.cx - 40,p.cy));
+			setColorWheel(blockMovieAt(p.cx - 40, p.cy));
 		}
-		if (blockAt(p.cx - 40,p.cy - 25) == 16 && p.onob) {
+		if (blockAt(p.cx - 40, p.cy - 25) == 16 && p.onob) {
 			colorc += colorPower;
-			setColorWheel(blockMovieAt(p.cx - 40,p.cy - 25));
+			setColorWheel(blockMovieAt(p.cx - 40, p.cy - 25));
 		}
 		p.vx = 0;
 		p.cx = Math.floor((p.cx - 15) / 25) * 25 + 15;
 		achget(32);
 		timerr = 0;
 	}
-	if (p.vx < 0 && (solidAt(p.cx - 10,p.cy) && p.cy % 25 > 0 || solidAt(p.cx - 10,p.cy - 25) && p.cy % 25 < 20)) {
-		if (blockAt(p.cx - 10,p.cy) == 16 && p.onob) {
+	if (p.vx < 0 && (solidAt(p.cx - 10, p.cy) && p.cy % 25 > 0 || solidAt(p.cx - 10, p.cy - 25) && p.cy % 25 < 20)) {
+		if (blockAt(p.cx - 10, p.cy) == 16 && p.onob) {
 			colorc -= colorPower;
-			setColorWheel(blockMovieAt(p.cx - 10,p.cy));
+			setColorWheel(blockMovieAt(p.cx - 10, p.cy));
 		}
-		if (blockAt(p.cx - 10,p.cy - 25) == 16 && p.onob) {
+		if (blockAt(p.cx - 10, p.cy - 25) == 16 && p.onob) {
 			colorc -= colorPower;
-			setColorWheel(blockMovieAt(p.cx - 10,p.cy - 25));
+			setColorWheel(blockMovieAt(p.cx - 10, p.cy - 25));
 		}
 		p.vx = 0;
 		p.cx = Math.ceil((p.cx + 15) / 25) * 25 - 15;
 		achget(31);
 		timerl = 0;
 	}
-	if (painfulAt(p.cx - 8,p.cy - 2) || painfulAt(p.cx + 8,p.cy - 2) || painfulAt(p.cx - 8,p.cy - 18) || painfulAt(p.cx + 8,p.cy - 18)) {
+	if (painfulAt(p.cx - 8, p.cy - 2) || painfulAt(p.cx + 8, p.cy - 2) || painfulAt(p.cx - 8, p.cy - 18) || painfulAt(p.cx + 8, p.cy - 18)) {
 		die();
 		achget(12);
 	}
 	if (ghost == 0) {
-		getCoinAt(p.cx + 10,p.cy);
-		getCoinAt(p.cx - 10,p.cy);
-		getCoinAt(p.cx + 10,p.cy - 20);
-		getCoinAt(p.cx - 10,p.cy - 20);
+		getCoinAt(p.cx + 10, p.cy);
+		getCoinAt(p.cx - 10, p.cy);
+		getCoinAt(p.cx + 10, p.cy - 20);
+		getCoinAt(p.cx - 10, p.cy - 20);
 	}
-	getPortalAt(p.cx,p.cy - 10);
-	vanish(p.cx,p.cy);
-	paint(p.cx,p.cy - 10);
-	checkFlag(p.cx - 10,p.cy - 5);
-	checkFlag(p.cx - 10,p.cy - 30);
-	checkFlag(p.cx + 10,p.cy - 5);
-	checkFlag(p.cx + 10,p.cy - 30);
+
+	// Tile checks
+	getPortalAt(p.cx, p.cy - 10);
+	vanish(p.cx, p.cy);
+	paint(p.cx, p.cy - 10);
+	checkFlag(p.cx - 10, p.cy - 5);
+	checkFlag(p.cx - 10, p.cy - 30);
+	checkFlag(p.cx + 10, p.cy - 5);
+	checkFlag(p.cx + 10, p.cy - 30);
+
+	// Camera & positioning
 	oldCameraX = cameraX;
 	oldCameraY = cameraY;
 	cameraXV = 370 - p.ax;
-	if (cameraXV > mapWidth * 12.5) {
-		cameraXV -= mapWidth * 25;
-	}
-	if (cameraXV < (-mapWidth) * 12.5) {
-		cameraXV += mapWidth * 25;
-	}
-	cameraX -= Math.min(Math.max(cameraXV / 8,- panpower),panpower);
-	cameraY -= Math.min(Math.max((460 - Math.min(Math.max(freefallTimer - 40,0) * 10,500) - p.ay) / 8,- panpower),panpower);
-	if (cameraX < 0) {
-		cameraX += mapWidth * 25;
-	}
-	if (cameraX > mapWidth * 25) {
-		cameraX -= mapWidth * 25;
-	}
-	if (p.cx < 0) {
-		p.cx += mapWidth * 25;
-	}
-	if (p.cx > mapWidth * 25) {
-		p.cx -= mapWidth * 25;
-	}
+	if (cameraXV >  mapWidth * 12.5) cameraXV -= mapWidth * 25;
+	if (cameraXV < -mapWidth * 12.5) cameraXV += mapWidth * 25;
+	cameraX -= Math.min(Math.max(cameraXV / 8, - panpower), panpower);
+	cameraY -= Math.min(Math.max((460 - Math.min(Math.max(freefallTimer - 40, 0) * 10, 500) - p.ay) / 8, - panpower), panpower);
+	if (cameraX < 0) cameraX += mapWidth * 25;
+	if (cameraX > mapWidth * 25) cameraX -= mapWidth * 25;
+	if (p.cx < 0) p.cx += mapWidth * 25;
+	if (p.cx > mapWidth * 25) p.cx -= mapWidth * 25;
 	p.ax = (p.cx - cameraX + mapWidth * 25) % (mapWidth * 25) + stageOffsetX;
 	p.ay = p.cy - cameraY + stageOffsetY;
 	player.x = p.ax;
@@ -1414,37 +1391,27 @@ function draw() {
 	bg.x = (Math.max(Math.min(-cameraX / 10, 0), -625)) * 5;
 	bg.y = (-cameraY / 10 - 150) * 5;
 	drawmap();
+
+	// Stat updates
 	_root.stat1.text = achCount;
-	if (seconds() < 10) {
-		_root.stat3.text = minutes() + ":0" + seconds() + "." + secondTenths();
-	} else {
-		_root.stat3.text = minutes() + ":" + seconds() + "." + secondTenths();
-	}
+	if (seconds() < 10) _root.stat3.text = minutes() + ":0" + seconds() + "." + secondTenths();
+	else _root.stat3.text = minutes() + ":" + seconds() + "." + secondTenths();
 	_root.stat4.text = money;
+
 	oldXmouse = _xmouse;
 	oldYmouse = _ymouse;
+
+	// Timers
 	timer = getTimer() - startTimer;
 	noAchTimer = getTimer() - noAchTimerStart;
 	noDeathTimer = getTimer() - noDeathTimerStart;
 	noCoinTimer = getTimer() - noCoinTimerStart;
-	if (timer >= 1000) {
-		achget(8);
-	}
-	if (timer >= 60000) {
-		achget(9);
-	}
-	if (noAchTimer >= 10000) {
-		achget(10);
-	}
-	if (noDeathTimer >= 10000) {
-		achget(23);
-	}
-	if (noDeathTimer >= 30000) {
-		achget(24);
-	}
-	if (noCoinTimer >= 1800) {
-		achget(41);
-	}
+	if (timer >= 1000) achget(8);
+	if (timer >= 60000) achget(9);
+	if (noAchTimer >= 10000) achget(10);
+	if (noDeathTimer >= 10000) achget(23);
+	if (noDeathTimer >= 30000) achget(24);
+	if (noCoinTimer >= 1800) achget(41);
 	if (flashTimer == 0) {
 		deathFlash.visible = true;
 		deathFlash.alpha = 1;
@@ -1454,10 +1421,9 @@ function draw() {
 		deathFlash.visible = false;
 	}
 	flashTimer++;
-	if (_keysDown[16]) {
-		p.vy -= 1;
-	}
+	if (_keysDown[16]) p.vy -= 1; // Flight
 
+	// Visual tile updates
 	for (let y = 0; y < mapHeight; y++) {
 		for (let x = 0; x < mapWidth; x++) {
 			if (tileFrames[y][x]) {
@@ -1486,7 +1452,7 @@ function draw() {
 				flag.context = textures.flag2[_frameCount % textures.flag.length];
 				blockMovieAt(x*25, y*25).getChildByLabel('checker').context = textures.checker[_frameCount % textures.flag.length];
 				if (flag.dataFrame >= 2 && flag.dataFrame < finishFlagColors.length - 1) {
-					setFlagColor(flag.parent, 1, flag.dataFrame + 1);
+					setFlagColor(flag.parent, 1, flag.dataFrame + 1); // FIXME: This skips the first frame of the finish animation.
 				}
 			}
 		}
