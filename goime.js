@@ -676,11 +676,11 @@ function drawbubble(num, bubble, yoffset, pointer) {
 		.lineTo(-bubblePointLength * pointer - bubbleRadius, -bubbleBoxWidth / 2 + yoffset)
 		.quadraticCurveTo(-bubblePointLength * pointer, -bubbleBoxWidth / 2 + yoffset, -bubblePointLength * pointer, -bubbleBoxWidth / 2 + bubbleRadius + yoffset)
 		.fill(getColor(achievements[num], colorType, 1));
-	bubble.getChildByLabel('achNumText').text = num + 1 + '  ' + achievementText[num][0];
+	bubble.getChildByLabel('achNumText').text = num + 1 + '  ' + achievementText[num]?.[0];
 	bubble.getChildByLabel('achNumText').y = -bubbleBoxWidth / 2 + yoffset;
 	bubble.getChildByLabel('achNumText').style.fill = getColor(achievements[num], colorType, 3);
 	if (achievements[num]) {
-		bubble.getChildByLabel('descriptionText').text = achievementText[num][1];
+		bubble.getChildByLabel('descriptionText').text = achievementText[num]?.[1];
 		bubble.getChildByLabel('descriptionText').y = -bubbleBoxWidth / 2 + yoffset + 23;
 	} else {
 		bubble.getChildByLabel('descriptionText').text = '';
