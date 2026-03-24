@@ -180,8 +180,86 @@ const tileProperties = [
 	// 100-199 are portals
 	// 200-299 are flags
 ];
-const achievementNames = ["Best thing ever","Bonk","Bouncy ball","To the left!","Going the right way","Painful landing","Full sprint","Very painful landing","Play for a second","A minute minute","Uneventful","The inevitable","Ouch!","Die from starvation","Boing!","Red Zone","Don't get splinters","Green zone","Yellow zone","Migration","More details","Bright blue bubble","Gray zone","Survive","Survive and thrive","Supernatural","Revival","Ghostly death","Paranormal step","Empty list","Ghosts cheat death","Left smush","Right smush","Blue zone","Join the work force","I hate nickels","Penny pincher","Teleporter","Splash of color","Across the rainbow","Bull in a china shop","Unemployed","A colorful way to die","No one can die twice...","Clumsy","White zone","Very clumsy","Too clumsy","Way too clumsy","Coin collector","Coin snatcher","Leave a mark","A big canvas","A second coat","Uniform painter","Paint everywhere","Multicolor","Ghost make bad painters","Exotic ghost","Extremely painful landing","Bounceway","Ghostspike","Lie Low","Islands","Bottomless","Superbonk","Finish line","Giving it a try","Daredevil meets doom","Ghosts in the portal","Seeing red","Juicy Orange","N","Green with Envy","Waterdrop","Pale blue dot","You are a grape","Fuchsiania"];
-const achievementDescriptions = ["Start playing this game.","Hit your head on a ceiling.","Jump.","Move left.","Move right.","Land.","Reach maximum running speed.","Land from a high distance.","Until you get to the second second!","Play for a minute.","Don't get an achievement for ten seconds.","Die.","Touch a deadly block.","Die from falling into the abyss.","Bounce on a trampoline.","Walk on red land.","Walk on wood.","Walk on green land.","Walk on yellow land.","Set a different spawn point.","Roll over an achievement.","Roll over an achieved achievement.","Walk on gray land.","Don't die for ten seconds.","Don't die for thirty seconds.","Become a ghost.","Turn from ghost to normal.","Die as a ghost.","Land as a ghost (on black land).","Get the list of recent achievements blank.","Be in front of a spikeball as a ghost.","Press against a wall to the left.","Press against a wall to the right.","Walk on blue land.","Collect a coin.","Collect five coins.","Collect all 100 coins.","Use a portal.","Paint yourself a different color.","Paint yourself all possible colors.","Destroy a temporary block.","Go thirty seconds without collecting a coin.","Die as a color other than yellow.","Die twice.","Die five times.","Walk on white land.","Die 25 times.","Die 50 times.","Die 100 times.","Collect 10 coins","Collect 20 coins.","Paint a canvas.","Paint the main canvas.","Paint a canvas twice with different colors.","Paint the main canvas entirely one color.","Paint the entire main canvas.","Get two colors visible on the main canvas.","Try to paint as a ghost.","Be a ghost as a color other than yellow.","Land from falling for three whole seconds.","Complete the \"Bounceway\" course.","Complete the \"Ghostspike\" course.","Complete the \"Lie Low\" course.","Complete the \"Islands\" course.","Complete the \"Bottomless\" course.","Hit your head on a ceiling very hard.","Complete a course.","Start a course by going to a green flag.","Die after starting a course.","Use a portal as a ghost.","Paint yourself red.","Paint yourself orange.","D","Paint yourself green.","Paint yourself cyan.","Paint yourself blue.","Paint yourself purple.","Paint yourself pink."];
+const achievementText = [
+	["Best thing ever", "Start playing this game."],
+	["Bonk", "Hit your head on a ceiling."],
+	["Bouncy ball", "Jump."],
+	["To the left!", "Move left."],
+	["Going the right way", "Move right."],
+	["Painful landing", "Land."],
+	["Full sprint", "Reach maximum running speed."],
+	["Very painful landing", "Land from a high distance."],
+	["Play for a second", "Until you get to the second second!"],
+	["A minute minute", "Play for a minute."],
+	["Uneventful", "Don't get an achievement for ten seconds."],
+	["The inevitable", "Die."],
+	["Ouch!", "Touch a deadly block."],
+	["Die from starvation", "Die from falling into the abyss."],
+	["Boing!", "Bounce on a trampoline."],
+	["Red Zone", "Walk on red land."],
+	["Don't get splinters", "Walk on wood."],
+	["Green zone", "Walk on green land."],
+	["Yellow zone", "Walk on yellow land."],
+	["Migration", "Set a different spawn point."],
+	["More details", "Roll over an achievement."],
+	["Bright blue bubble", "Roll over an achieved achievement."],
+	["Gray zone", "Walk on gray land."],
+	["Survive", "Don't die for ten seconds."],
+	["Survive and thrive", "Don't die for thirty seconds."],
+	["Supernatural", "Become a ghost.",],
+	["Revival", "Turn from ghost to normal."],
+	["Ghostly death", "Die as a ghost."],
+	["Paranormal step", "Land as a ghost (on black land)."],
+	["Empty list", "Get the list of recent achievements blank."],
+	["Ghosts cheat death", "Be in front of a spikeball as a ghost."],
+	["Left smush", "Press against a wall to the left."],
+	["Right smush", "Press against a wall to the right."],
+	["Blue zone", "Walk on blue land."],
+	["Join the work force", "Collect a coin."],
+	["I hate nickels", "Collect five coins."],
+	["Penny pincher", "Collect all 100 coins."],
+	["Teleporter", "Use a portal."],
+	["Splash of color", "Paint yourself a different color."],
+	["Across the rainbow", "Paint yourself all possible colors."],
+	["Bull in a china shop", "Destroy a temporary block."],
+	["Unemployed", "Go thirty seconds without collecting a coin."],
+	["A colorful way to die", "Die as a color other than yellow."],
+	["No one can die twice...", "Die twice."],
+	["Clumsy", "Die five times."],
+	["White zone", "Walk on white land."],
+	["Very clumsy", "Die 25 times."],
+	["Too clumsy", "Die 50 times."],
+	["Way too clumsy", "Die 100 times."],
+	["Coin collector", "Collect 10 coins"],
+	["Coin snatcher", "Collect 20 coins."],
+	["Leave a mark", "Paint a canvas."],
+	["A big canvas", "Paint the main canvas."],
+	["A second coat", "Paint a canvas twice with different colors."],
+	["Uniform painter", "Paint the main canvas entirely one color."],
+	["Paint everywhere", "Paint the entire main canvas."],
+	["Multicolor", "Get two colors visible on the main canvas."],
+	["Ghost make bad painters", "Try to paint as a ghost."],
+	["Exotic ghost", "Be a ghost as a color other than yellow."],
+	["Extremely painful landing","Land from falling for three whole seconds."],
+	["Bounceway", "Complete the \"Bounceway\" course."],
+	["Ghostspike", "Complete the \"Ghostspike\" course."],
+	["Lie Low", "Complete the \"Lie Low\" course."],
+	["Islands", "Complete the \"Islands\" course."],
+	["Bottomless", "Complete the \"Bottomless\" course."],
+	["Superbonk", "Hit your head on a ceiling very hard."],
+	["Finish line", "Complete a course."],
+	["Giving it a try", "Start a course by going to a green flag."],
+	["Daredevil meets doom", "Die after starting a course."],
+	["Ghosts in the portal", "Use a portal as a ghost."],
+	["Seeing red", "Paint yourself red."],
+	["Juicy Orange", "Paint yourself orange."],
+	["N", "D"],
+	["Green with Envy", "Paint yourself green."],
+	["Waterdrop", "Paint yourself cyan."],
+	["Pale blue dot", "Paint yourself blue."],
+	["You are a grape", "Paint yourself purple."],
+	["Fuchsiania", "Paint yourself pink."],
+];
 let achievementListBitmap, achievementListSprite;
 const bubbleRadius = 10;
 const bubblePointLength = 15;
@@ -604,11 +682,11 @@ function drawbubble(num, bubble, yoffset, pointer) {
 		.lineTo(-bubblePointLength * pointer - bubbleRadius, -bubbleBoxWidth / 2 + yoffset)
 		.quadraticCurveTo(-bubblePointLength * pointer, -bubbleBoxWidth / 2 + yoffset, -bubblePointLength * pointer, -bubbleBoxWidth / 2 + bubbleRadius + yoffset)
 		.fill(getColor(achievements[num], colorType, 1));
-	bubble.getChildByLabel('achNumText').text = num + 1 + '  ' + achievementNames[num];
+	bubble.getChildByLabel('achNumText').text = num + 1 + '  ' + achievementText[num][0];
 	bubble.getChildByLabel('achNumText').y = -bubbleBoxWidth / 2 + yoffset;
 	bubble.getChildByLabel('achNumText').style.fill = getColor(achievements[num], colorType, 3);
 	if (achievements[num]) {
-		bubble.getChildByLabel('descriptionText').text = achievementDescriptions[num];
+		bubble.getChildByLabel('descriptionText').text = achievementText[num][1];
 		bubble.getChildByLabel('descriptionText').y = -bubbleBoxWidth / 2 + yoffset + 23;
 	} else {
 		bubble.getChildByLabel('descriptionText').text = '';
@@ -768,7 +846,7 @@ function removeBlockAt(x, y) {
 function achget(num) {
 	const swappedNum = swap[num];
 	if (!achievements[swappedNum]) {
-		console.log(achievementNames[num]);
+		console.log(achievementText[num][0]);
 		noAchTimerStart = getTimer();
 		drawach(swappedNum, true);
 		flushAchievementList();
