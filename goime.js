@@ -145,38 +145,32 @@ const achShowing = new Array(0);
 let achCount = 0;
 const startTimer = getTimer();
 
-// [0] solid
-// [1] hurts
-// [2] is trampoline
-// [3] (unused)
-// [4] impermeable to ghosts
-// [5] frame count
 const tileProperties = [
 	// 00
-	[false,false,false,true, false,0 ], // . Air
-	[true, false,false,true, false,1 ], // / Red tile
-	[true, false,false,true, false,1 ], // 0 Green tile
-	[true, false,false,true, false,1 ], // 1 Gray spikes
-	[false,true, false,true, false,1 ], // 2 Yellow tile
-	[true, false,false,true, false,1 ], // 3 Gray tile
-	[true, false,false,true, false,1 ], // 4 Wood tile
-	[true, false,true, true, false,11], // 5 Trampoline
-	[false,true, false,true, false,1 ], // 6 Fire
-	[true, false,false,true, false,1 ], // 7 White tile
+	{solid: false, hurts: false, frameCount: 0 }, // . Air
+	{solid: true, hurts: false, frameCount: 1 }, // / Red tile
+	{solid: true, hurts: false, frameCount: 1 }, // 0 Green tile
+	{solid: true, hurts: false, frameCount: 1 }, // 1 Gray spikes
+	{solid: false, hurts: true, frameCount: 1 }, // 2 Yellow tile
+	{solid: true, hurts: false, frameCount: 1 }, // 3 Gray tile
+	{solid: true, hurts: false, frameCount: 1 }, // 4 Wood tile
+	{solid: true, hurts: false, bouncy: true,  frameCount: 11}, // 5 Trampoline
+	{solid: false, hurts: true, frameCount: 1 }, // 6 Fire
+	{solid: true, hurts: false, frameCount: 1 }, // 7 White tile
 	// 10
-	[true, false,false,true, false,1 ], // 8 Light blue tile
-	[true, false,false,true, true, 1 ], // 9 Black tile
-	[false,true, false,true, true, 1 ], // : Dark spikes
-	[false,false,false,true, false,1 ], // ; Coin
-	[true, false,false,true, false,2 ], // < Spawn point (left)
-	[true, false,false,true, false,2 ], // = Spawn point (right)
-	[true, false,false,true, false,1 ], // > Color wheel
-	[true, false,false,true, false,0 ], // ? Tangible invisible tile
-	[true, false,false,true, false,1 ], // @ Temporary tile
-	[false,false,false,true, false,1 ], // A Paintable tile
+	{solid: true, hurts: false, frameCount: 1 }, // 8 Light blue tile
+	{solid: true, hurts: false, ghostInteractions: true, frameCount: 1 }, // 9 Black tile
+	{solid: false, hurts: true, ghostInteractions: true, frameCount: 1 }, // : Dark spikes
+	{solid: false, hurts: false, frameCount: 1 }, // ; Coin
+	{solid: true, hurts: false, frameCount: 2 }, // < Spawn point (left)
+	{solid: true, hurts: false, frameCount: 2 }, // = Spawn point (right)
+	{solid: true, hurts: false, frameCount: 1 }, // > Color wheel
+	{solid: true, hurts: false, frameCount: 0 }, // ? Tangible invisible tile
+	{solid: true, hurts: false, frameCount: 1 }, // @ Temporary tile
+	{solid: false, hurts: false, frameCount: 1 }, // A Paintable tile
 	// 20
-	[false,false,false,true, false,1 ], // B Unused and unpaintable paintable tile duplicate
-	[false,false,false,false,false,1 ], // C Guy
+	{solid: false, hurts: false, frameCount: 1 }, // B Unused and unpaintable paintable tile duplicate
+	{solid: false, hurts: false, frameCount: 1 }, // C Guy
 	// 100-199 are portals
 	// 200-299 are flags
 ];
@@ -206,7 +200,7 @@ const achievementText = [
 	["Gray zone", "Walk on gray land."],
 	["Survive", "Don't die for ten seconds."],
 	["Survive and thrive", "Don't die for thirty seconds."],
-	["Supernatural", "Become a ghost.",],
+	["Supernatural", "Become a ghost."],
 	["Revival", "Turn from ghost to normal."],
 	["Ghostly death", "Die as a ghost."],
 	["Paranormal step", "Land as a ghost (on black land)."],
@@ -328,7 +322,7 @@ async function preload() {
 	textures.bg = await PIXI.Assets.load('data/img/bg.jpg');
 	textures.tiles = new Array(tileProperties.length);
 	for (let i = 0; i < tileProperties.length; i++) {
-		const frameCount = tileProperties[i][5];
+		const frameCount = tileProperties[i].frameCount;
 		if (frameCount == 1) {
 			textures.tiles[i] = await loadSVGGraphics(`tiles/t${i.toString().padStart(4, '0')}.svg`);
 		} else if (frameCount > 1) {
@@ -514,7 +508,7 @@ function addMapVisuals() {
 							x: x2 * 25,
 							y: y2 * 25,
 						});
-						if (tileProperties[map[y3][x3]]?.[5] > 1) tileFrames[y3][x3] = {cf: 0, playing: false, update: false};
+						if (tileProperties[map[y3][x3]]?.frameCount > 1) tileFrames[y3][x3] = {cf: 0, playing: false, update: false};
 						addTile(newTile, map[y3][x3]);
 					}
 				}
@@ -524,8 +518,8 @@ function addMapVisuals() {
 }
 
 function addTile(container, tileType) {
-	if (tileType < tileProperties.length && tileProperties[tileType][5] > 0) {
-		const frameCount = tileProperties[tileType][5];
+	if (tileType < tileProperties.length && tileProperties[tileType].frameCount > 0) {
+		const frameCount = tileProperties[tileType].frameCount;
 		new PIXI.Graphics({parent: container, label: 'main', zIndex: 1, context: frameCount == 1 ? textures.tiles[tileType] : textures.tiles[tileType][0]})
 	}
 	if (tileType == 16) {
@@ -807,8 +801,8 @@ function setBlockAt(x, y, t) {
 		let tileX = Math.floor(x / 25);
 		tileX = loopOver(tileX, 0, mapWidth);
 		map[tileY][tileX] = t;
-		if (tileProperties[t][5] > 0) {
-			blockMovieAt(x, y).getChildByLabel('main').context = tileProperties[t][5] == 1 ? textures.tiles[t] : textures.tiles[t][0];
+		if (tileProperties[t].frameCount > 0) {
+			blockMovieAt(x, y).getChildByLabel('main').context = tileProperties[t].frameCount == 1 ? textures.tiles[t] : textures.tiles[t][0];
 		} else {
 			removeBlockAt(x, y);
 		}
@@ -944,7 +938,7 @@ function blockUnderProp(x, y, prop) {
 	}
 }
 function playerIntersect() {
-	return tileProperties[blockAt(p.cx - 10, p.cy - 1)]?.[0] || tileProperties[blockAt(p.cx + 10, p.cy - 1)]?.[0] || tileProperties[blockAt(p.cx - 10, p.cy - 20)]?.[0] || tileProperties[blockAt(p.cx + 10, p.cy - 20)]?.[0];
+	return tileProperties[blockAt(p.cx - 10, p.cy - 1)]?.solid || tileProperties[blockAt(p.cx + 10, p.cy - 1)]?.solid || tileProperties[blockAt(p.cx - 10, p.cy - 20)]?.solid || tileProperties[blockAt(p.cx + 10, p.cy - 20)]?.solid;
 }
 function getCoinAt(x, y) {
 	if (blockAt(x, y) == 13) {
@@ -990,10 +984,10 @@ function getPortalAt(x, y) {
 	}
 }
 function solidAt(x, y) {
-	return tileProperties[blockAt(x, y)]?.[0] && (ghost == 0 || tileProperties[blockAt(x, y)]?.[4]);
+	return tileProperties[blockAt(x, y)]?.solid && (ghost == 0 || tileProperties[blockAt(x, y)]?.ghostInteractions);
 }
 function painfulAt(x, y) {
-	return tileProperties[blockAt(x, y)]?.[1] && (ghost == 0 || tileProperties[blockAt(x, y)]?.[4]);
+	return tileProperties[blockAt(x, y)]?.hurts && (ghost == 0 || tileProperties[blockAt(x, y)]?.ghostInteractions);
 }
 function minutes() {
 	return Math.floor(timer / 60000);
@@ -1341,7 +1335,7 @@ function draw() {
 		turnSpawnOn(p.cx, p.cy);
 	}
 	if (ghost == 0) {
-		const bouncy = blockUnderProp(p.cx, p.cy, 2);
+		const bouncy = blockUnderProp(p.cx, p.cy, 'bouncy');
 		if (bouncy > 0) {
 			achget(14);
 			const tileX = getTileX(p.cx + (bouncy * 25 - 50));
@@ -1470,7 +1464,7 @@ function draw() {
 		for (let x = 0; x < mapWidth; x++) {
 			if (tileFrames[y][x]) {
 				if (tileFrames[y][x].playing) {
-					tileFrames[y][x].cf = (tileFrames[y][x].cf + 1) % tileProperties[map[y][x]][5];
+					tileFrames[y][x].cf = (tileFrames[y][x].cf + 1) % tileProperties[map[y][x]].frameCount;
 					if (tileFrames[y][x].cf == 0) tileFrames[y][x].playing = false;
 				}
 				if (tileFrames[y][x].playing || tileFrames[y][x].update) {
